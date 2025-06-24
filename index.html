@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат Рулетка - Видеочат с игрой КНБ</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- РЕШЕНИЕ: Простая структура без лишних элементов -->
+    <!-- АЛЬТЕРНАТИВА: Могли бы использовать React, но vanilla JS проще -->
+    <!-- ПРОБЛЕМА: Создание копии videochatru.com с добавлением игры КНБ -->
+    
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">Чат Рулетка</h1>
+            <p class="tagline">Знакомься и играй в КНБ!</p>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Видеочат секция -->
+            <section class="video-section">
+                <div class="video-container">
+                    <video id="localVideo" autoplay muted playsinline></video>
+                    <video id="remoteVideo" autoplay playsinline></video>
+                    <div class="video-overlay">
+                        <div id="connectionStatus" class="status">Нажмите "Старт" для начала</div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button id="startBtn" class="btn btn-primary">Старт</button>
+                    <button id="nextBtn" class="btn btn-secondary" disabled>Далее</button>
+                    <button id="stopBtn" class="btn btn-danger" disabled>Стоп</button>
+                </div>
+            </section>
+
+            <!-- Игра КНБ секция -->
+            <section class="game-section" id="gameSection" style="display: none;">
+                <h2>Камень, Ножницы, Бумага</h2>
+                <div class="game-container">
+                    <div class="player-choice">
+                        <h3>Ваш выбор:</h3>
+                        <div class="choice-buttons">
+                            <button class="choice-btn" data-choice="rock">🪨</button>
+                            <button class="choice-btn" data-choice="paper">📄</button>
+                            <button class="choice-btn" data-choice="scissors">✂️</button>
+                        </div>
+                        <div id="playerChoice" class="choice-display"></div>
+                    </div>
+                    
+                    <div class="vs-section">
+                        <div class="vs">VS</div>
+                        <div id="gameResult" class="result"></div>
+                    </div>
+                    
+                    <div class="opponent-choice">
+                        <h3>Выбор соперника:</h3>
+                        <div id="opponentChoice" class="choice-display">Ожидание...</div>
+                    </div>
+                </div>
+                
+                <div class="game-stats">
+                    <div class="score">
+                        <span>Вы: <span id="playerScore">0</span></span>
+                        <span>Соперник: <span id="opponentScore">0</span></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Чат секция -->
+            <section class="chat-section">
+                <div class="chat-container">
+                    <div id="chatMessages" class="chat-messages"></div>
+                    <div class="chat-input">
+                        <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
+                        <button id="sendBtn" class="btn btn-small" disabled>Отправить</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Чат Рулетка с игрой КНБ</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

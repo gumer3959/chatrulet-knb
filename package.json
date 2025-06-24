@@ -1,0 +1,30 @@
+{
+  "name": "chatrulet-knb",
+  "version": "1.0.0",
+  "description": "Видеочат рулетка с игрой Камень, Ножницы, Бумага",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'No build step required for static files'"
+  },
+  "keywords": [
+    "videochat",
+    "webrtc",
+    "rock-paper-scissors",
+    "chatroulette"
+  ],
+  "author": "Гумер",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/chatrulet-knb.git"
+  }
+}
