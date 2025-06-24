@@ -103,15 +103,34 @@ let activeRooms = new Map(); // Активные комнаты с парами 
 // WebSocket обработка для WebRTC сигнализации
 io.on('connection', (socket) => {
     console.log(`👤 Пользователь подключился: ${socket.id}`);
+    console.log(`📊 Статистика: ожидающих=${waitingUsers.length}, активных комнат=${activeRooms.size}`);
 
     // Поиск собеседника
     socket.on('find-peer', () => {
         console.log(`🔍 Пользователь ${socket.id} ищет собеседника`);
 
+        // РЕШЕНИЕ: Убираем пользователя из очереди если он там есть
+        // ПРОБЛЕМА: Пользователь мог остаться в очереди после предыдущего поиска
+        waitingUsers = waitingUsers.filter(user => user.id !== socket.id);
+
+        // Убираем из активных комнат если есть
+        const existingRoom = activeRooms.get(socket.id);
+        if (existingRoom) {
+            console.log(`🧹 Очищаем предыдущую комнату для ${socket.id}`);
+            activeRooms.delete(socket.id);
+            if (activeRooms.has(existingRoom.peerId)) {
+                activeRooms.delete(existingRoom.peerId);
+            }
+        }
+
+        console.log(`📊 После очистки: ожидающих=${waitingUsers.length}, активных комнат=${activeRooms.size}`);
+
         if (waitingUsers.length > 0) {
             // Есть ожидающий пользователь - создаем пару
             const peer = waitingUsers.shift();
             const roomId = `room_${socket.id}_${peer.id}`;
+
+            console.log(`🤝 Создаем пару: ${socket.id} ↔ ${peer.id}`);
 
             // Создаем комнату
             socket.join(roomId);
@@ -125,11 +144,12 @@ io.on('connection', (socket) => {
             peer.emit('peer-found', { peerId: socket.id, roomId });
 
             console.log(`✅ Создана пара: ${socket.id} ↔ ${peer.id} в комнате ${roomId}`);
+            console.log(`📊 Активных комнат: ${activeRooms.size}`);
         } else {
             // Добавляем в очередь ожидания
             waitingUsers.push(socket);
             socket.emit('waiting-for-peer');
-            console.log(`⏳ Пользователь ${socket.id} добавлен в очередь`);
+            console.log(`⏳ Пользователь ${socket.id} добавлен в очередь (всего ожидающих: ${waitingUsers.length})`);
         }
     });
 
@@ -188,8 +208,12 @@ io.on('connection', (socket) => {
 
     // Поиск нового собеседника
     socket.on('find-next-peer', () => {
+        console.log(`🔄 Пользователь ${socket.id} ищет нового собеседника`);
+
         const room = activeRooms.get(socket.id);
         if (room) {
+            console.log(`📢 Уведомляем ${room.peerId} об отключении ${socket.id}`);
+
             // Уведомляем текущего собеседника о разрыве
             socket.to(room.peerId).emit('peer-disconnected');
 
@@ -200,10 +224,19 @@ io.on('connection', (socket) => {
             // Покидаем комнату
             socket.leave(room.roomId);
             io.sockets.sockets.get(room.peerId)?.leave(room.roomId);
+
+            console.log(`🧹 Очищена комната ${room.roomId}`);
         }
 
+        // РЕШЕНИЕ: Убираем из очереди если там есть
+        waitingUsers = waitingUsers.filter(user => user.id !== socket.id);
+
+        console.log(`📊 После очистки: ожидающих=${waitingUsers.length}, активных комнат=${activeRooms.size}`);
+
         // Начинаем новый поиск
-        socket.emit('find-peer');
+        setTimeout(() => {
+            socket.emit('find-peer');
+        }, 100); // Небольшая задержка для корректной очистки
     });
 
     // Отключение пользователя
@@ -211,15 +244,25 @@ io.on('connection', (socket) => {
         console.log(`👋 Пользователь отключился: ${socket.id}`);
 
         // Удаляем из очереди ожидания
+        const beforeCount = waitingUsers.length;
         waitingUsers = waitingUsers.filter(user => user.id !== socket.id);
+        const afterCount = waitingUsers.length;
+
+        if (beforeCount !== afterCount) {
+            console.log(`🧹 Удален из очереди: ${socket.id} (было: ${beforeCount}, стало: ${afterCount})`);
+        }
 
         // Уведомляем собеседника об отключении
         const room = activeRooms.get(socket.id);
         if (room) {
+            console.log(`📢 Уведомляем ${room.peerId} об отключении ${socket.id}`);
             socket.to(room.peerId).emit('peer-disconnected');
             activeRooms.delete(room.peerId);
             activeRooms.delete(socket.id);
+            console.log(`🧹 Очищена комната при отключении: ${room.roomId}`);
         }
+
+        console.log(`📊 После отключения: ожидающих=${waitingUsers.length}, активных комнат=${activeRooms.size}`);
     });
 });
 

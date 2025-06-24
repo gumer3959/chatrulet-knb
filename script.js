@@ -61,33 +61,41 @@ const VideoChat = {
 
         // Обработчики Socket.IO событий
         socket.on('waiting-for-peer', () => {
+            console.log('🔍 Ожидаем собеседника...');
             this.showStatus('Поиск собеседника...');
             isSearching = true;
             this.updateUI();
         });
 
         socket.on('peer-found', async (data) => {
+            console.log('🤝 Собеседник найден:', data.peerId);
             this.showStatus('Собеседник найден! Устанавливаем соединение...');
+            isSearching = false;
             currentPeerId = data.peerId;
             await this.createPeerConnection();
             await this.createOffer();
         });
 
         socket.on('webrtc-offer', async (data) => {
+            console.log('📨 Получен offer от:', data.from);
+            isSearching = false;
             currentPeerId = data.from;
             await this.createPeerConnection();
             await this.handleOffer(data.offer);
         });
 
         socket.on('webrtc-answer', async (data) => {
+            console.log('📨 Получен answer от:', data.from);
             await this.handleAnswer(data.answer);
         });
 
         socket.on('webrtc-ice-candidate', async (data) => {
+            console.log('🧊 Получен ICE candidate от:', data.from);
             await this.handleIceCandidate(data.candidate);
         });
 
         socket.on('peer-disconnected', () => {
+            console.log('👋 Собеседник отключился');
             this.handlePeerDisconnected();
         });
 
@@ -97,6 +105,15 @@ const VideoChat = {
 
         socket.on('game-choice', (data) => {
             Game.handleOpponentChoice(data.choice);
+        });
+
+        // РЕШЕНИЕ: Обработчик для повторного поиска
+        // ПРОБЛЕМА: Сервер может отправить find-peer для начала нового поиска
+        socket.on('find-peer', () => {
+            console.log('🔄 Сервер запросил новый поиск');
+            if (!isConnected && !isSearching) {
+                socket.emit('find-peer');
+            }
         });
     },
 
@@ -227,12 +244,11 @@ const VideoChat = {
     },
 
     next() {
+        console.log('🔄 Поиск нового собеседника...');
+
         // Ищем нового собеседника через WebSocket
         this.showStatus('Поиск нового собеседника...');
         Game.reset();
-
-        // Уведомляем сервер о поиске нового собеседника
-        socket.emit('find-next-peer');
 
         // Закрываем текущее соединение
         if (peerConnection) {
@@ -240,16 +256,21 @@ const VideoChat = {
             peerConnection = null;
         }
 
-        // Очищаем удаленное видео
+        // Очищаем удаленное видео и UI
         document.getElementById('remoteVideo').srcObject = null;
         document.getElementById('gameSection').style.display = 'none';
         document.getElementById('messageInput').disabled = true;
         document.getElementById('sendBtn').disabled = true;
         document.getElementById('chatMessages').innerHTML = '';
 
+        // Сбрасываем состояние
         isConnected = false;
+        isSearching = true;
         currentPeerId = null;
         this.updateUI();
+
+        // Уведомляем сервер о поиске нового собеседника
+        socket.emit('find-next-peer');
     },
 
     stop() {
